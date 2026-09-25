@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Gift for Zoe</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --terminal-green: #0f0;
+            --terminal-glow: 0 0 4px #0f0, 0 0 8px #0f0;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #050505;
+            color: var(--terminal-green);
+            font-family: 'VT323', 'Courier New', monospace;
+            text-shadow: var(--terminal-glow);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            font-size: 1.5rem;
+        }
+
+        /* Subtle scanline effect overlay */
+        body::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        #app-container {
+            position: relative;
+            z-index: 20;
+            max-width: 800px;
+            width: 90%;
+            padding: 20px;
+            text-align: center;
+        }
+
+        /* Stage 1: Gift Box */
+        #stage-1 {
+            cursor: pointer;
+            transition: opacity 0.2s ease, text-shadow 0.2s ease;
+        }
+
+        #stage-1:hover {
+            opacity: 0.9;
+            text-shadow: 0 0 8px #0f0, 0 0 15px #0f0;
+            transform: scale(1.02);
+        }
+
+        .ascii-art {
+            white-space: pre-wrap;
+            line-height: 1.1;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            user-select: none;
+        }
+
+        .blinking-prompt {
+            animation: blink 1.2s step-end infinite;
+            font-size: 1.8rem;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+
+        /* Stage 2: The Letter */
+        #stage-2 {
+            display: none;
+            text-align: left;
+            line-height: 1.4;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .ascii-letter-border {
+            white-space: pre-wrap;
+            line-height: 1.1;
+            text-align: center;
+            user-select: none;
+        }
+
+        #typewriter-container {
+            padding: 0 20px;
+            min-height: 250px; 
+            font-size: 1.6rem;
+            position: relative;
+        }
+
+        .cursor {
+            display: inline-block;
+            width: 12px;
+            height: 1.2em;
+            background-color: var(--terminal-green);
+            vertical-align: bottom;
+            animation: blink 1s step-end infinite;
+            margin-left: 2px;
+        }
+
+        /* Hide the audio iframe completely */
+        #audio-container {
+            position: absolute;
+            top: -9999px;
+            left: -9999px;
+            width: 0;
+            height: 0;
+            overflow: hidden;
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container">
+        
+        <!-- INITIAL STATE: ASCII Gift Box -->
+        <div id="stage-1">
+            <div class="ascii-art">
+      _ _
+     ( \ / )
+    __\ V /__
+   | | | | |
+   | | | | |
+   |__|_|_|__|
+            </div>
+            <div class="blinking-prompt">[ CLICK THE BOX TO OPEN ]</div>
+        </div>
+
+        <!-- OPENED STATE: ASCII Letter & Message -->
+        <div id="stage-2">
+            <div class="ascii-letter-border">
+ .==========================================.
+ | |
+            </div>
+            
+            <div id="typewriter-container">
+                <span id="typewriter-text"></span><span id="cursor" class="cursor"></span>
+            </div>
+            
+            <div class="ascii-letter-border">
+ | |
+ '=========================================='
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Hidden container for dynamic iframe injection -->
+    <div id="audio-container"></div>
+
+    <script>
+        const stage1 = document.getElementById('stage-1');
+        const stage2 = document.getElementById('stage-2');
+        const audioContainer = document.getElementById('audio-container');
+        const typewriterText = document.getElementById('typewriter-text');
+        const cursor = document.getElementById('cursor');
+
+        const message = "Great adventurer, you managed to get through the 10 levels, you beat 10 weirdos and rescued the princess, but.. did you ever wonder? Who are you adventurer and who is the princess...\n\nwell.....\n\nTHE ADVENTURER IS YOU ZOE\nAND IM YOUR PRINCESS 😹\n<3 :). Congrats on beating the game.";
+
+        let charIndex = 0;
+        let isTyping = false;
+
+        function typeWriter() {
+            if (charIndex < message.length) {
+                let char = message.charAt(charIndex);
+                
+                if (char === '\n') {
+                    typewriterText.innerHTML += '<br>';
+                } else if (char === '<') {
+                    typewriterText.innerHTML += '&lt;';
+                } else if (char === '>') {
+                    typewriterText.innerHTML += '&gt;';
+                } else {
+                    typewriterText.innerHTML += char;
+                }
+                
+                charIndex++;
+                
+                let delay = Math.random() * 40 + 20; 
+                
+                if (char === '.' || char === ',' || char === '?') {
+                    delay += 350;
+                }
+
+                setTimeout(typeWriter, delay);
+            }
+        }
+
+        stage1.addEventListener('click', () => {
+            if (isTyping) return; 
+            isTyping = true;
+
+            // 1. Swap the visuals
+            stage1.style.display = 'none';
+            stage2.style.display = 'block';
+
+            audioContainer.innerHTML = `
+                <iframe 
+                    width="10" 
+                    height="10" 
+                    src="https://www.youtube.com/embed/EkMIUEYfQAU?autoplay=1&loop=1&playlist=EkMIUEYfQAU&controls=0&mute=0" 
+                    frameborder="0" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+                </iframe>
+            `;
+
+            setTimeout(typeWriter, 800);
+        });
+    </script>
+</body>
+</html>
